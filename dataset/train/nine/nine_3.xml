@@ -1,0 +1,26 @@
+<annotation>
+	<folder>nine</folder>
+	<filename>nine_3.jpg</filename>
+	<path>D:\Documents\Personal Projects\Object_Detection\images\nine\nine_3.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>640</width>
+		<height>480</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>Nine</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>177</xmin>
+			<ymin>109</ymin>
+			<xmax>629</xmax>
+			<ymax>469</ymax>
+		</bndbox>
+	</object>
+</annotation>

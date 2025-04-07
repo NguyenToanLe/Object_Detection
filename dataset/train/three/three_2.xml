@@ -1,0 +1,26 @@
+<annotation>
+	<folder>three</folder>
+	<filename>three_2.jpg</filename>
+	<path>D:\Documents\Personal Projects\Object_Detection\images\three\three_2.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>640</width>
+		<height>480</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>Three</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>284</xmin>
+			<ymin>169</ymin>
+			<xmax>518</xmax>
+			<ymax>433</ymax>
+		</bndbox>
+	</object>
+</annotation>
