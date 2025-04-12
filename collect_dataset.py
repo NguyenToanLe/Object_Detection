@@ -7,7 +7,7 @@ import shutil
 def create_folders(img_classes):
     print("Creating folders......")
     for img_class in img_classes:
-        path = os.path.join(".", "dataset", img_class)
+        path = os.path.join(".", "dataset", "images", img_class)
         if not os.path.exists(path):
             os.makedirs(path)
     time.sleep(1)
@@ -55,15 +55,6 @@ def capture_images(img_classes, num_imgs, path_master):
 
 
 def split_images(img_classes, num_imgs, path_master, train, train_path, test_path):
-    # Create Folder structure
-    for img_class in img_classes:
-        path = os.path.join(train_path, img_class)
-        if not os.path.exists(path):
-            os.makedirs(path)
-        path = test_path
-        if not os.path.exists(path):
-            os.makedirs(path)
-
     # Training dataset
     if not os.path.exists(train_path):
         os.makedirs(train_path)
@@ -77,13 +68,21 @@ def split_images(img_classes, num_imgs, path_master, train, train_path, test_pat
         train_files = files[:num_train_imgs*2]
         for file in train_files:
             shutil.move(os.path.join(path_master, img_class, file),
-                        os.path.join(train_path, img_class, file))
+                        os.path.join(train_path, file))
 
     # Testing dataset
+    if not os.path.exists(test_path):
+        os.makedirs(test_path)
+
     for img_class in img_classes:
-        files = os.listdir(os.path.join(path_master, img_class))
-        shutil.move(os.path.join(path_master, img_class),
-                    os.path.join(test_path, img_class))
+        test_files = os.listdir(os.path.join(path_master, img_class))
+        for file in test_files:
+            shutil.move(os.path.join(path_master, img_class, file),
+                        os.path.join(test_path, file))
+
+    # Deleting the parent path
+    for img_class in img_classes:
+        shutil.rmtree(os.path.join(path_master, img_class))
 
 
 def main():
@@ -91,7 +90,7 @@ def main():
     img_classes = ['one', 'two', 'three', 'four', 'five',
                    'six', 'seven', 'eight', 'nine', 'ten']
     num_imgs = 5
-    IMAGE_PATH_MASTER = os.path.join(".", "dataset")
+    IMAGE_PATH_MASTER = os.path.join(".", "dataset", "images")
 
     # Create Folder structures
     if os.name == 'nt':
@@ -101,12 +100,12 @@ def main():
         return
 
     # Capture images using webcam
-    # capture_images(img_classes, num_imgs,IMAGE_PATH_MASTER)
+    # capture_images(img_classes, num_imgs, IMAGE_PATH_MASTER)
 
     # Splitting captured images into train and test set
-    # split_images(img_classes, num_imgs, IMAGE_PATH_MASTER, train=0.8,
-    #              train_path=os.path.join(IMAGE_PATH_MASTER, "train"),
-    #              test_path=os.path.join(IMAGE_PATH_MASTER, "test"))
+    split_images(img_classes, num_imgs, IMAGE_PATH_MASTER, train=0.8,
+                 train_path=os.path.join(IMAGE_PATH_MASTER, "train"),
+                 test_path=os.path.join(IMAGE_PATH_MASTER, "test"))
 
 
 if __name__ == "__main__":
