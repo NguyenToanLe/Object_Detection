@@ -17,17 +17,23 @@ def create_folders(img_classes):
 def show_webcam():
     print("Openning webcam......")
     webcam = cv2.VideoCapture(0)
-    if webcam.isOpened():  # Try to get the first frame
-        rval, frame = webcam.read()
-    else:
-        rval = False
-    while rval:
+    # if webcam.isOpened():  # Try to get the first frame
+    #     rval, frame = webcam.read()
+    # else:
+    #     rval = False
+    # while rval:
+    while webcam.isOpened():
+        # cv2.imshow("Webcam", frame)
+        # rval, frame = webcam.read()
+        _, frame = webcam.read()
         cv2.imshow("Webcam", frame)
-        rval, frame = webcam.read()
 
-        key = cv2.waitKey(20)
-        if key % 256 == 27:  # ESC pressed
+        # key = cv2.waitKey(20)
+        # if key % 256 == 27:  # ESC pressed
+        if cv2.waitKey(10) & 0xFF == ord('q'):      # q pressed
             print("Closing webcam......")
+            webcam.release()
+            cv2.destroyAllWindows()
             break
 
     webcam.release()
@@ -49,6 +55,10 @@ def capture_images(img_classes, num_imgs, path_master):
             image_name = os.path.join(path_master, img_class, f'{img_class}_{num+1}.jpg')
             cv2.imwrite(image_name, frame)
             time.sleep(1)
+            if cv2.waitKey(10) & 0xFF == ord('q'):  # q pressed
+                webcam.release()
+                cv2.destroyAllWindows()
+                break
         print("-----------------------------------------")
     webcam.release()
     cv2.destroyAllWindows()
@@ -87,9 +97,9 @@ def split_images(img_classes, num_imgs, path_master, train, train_path, test_pat
 
 def main():
     # Define some constants
-    img_classes = ['one', 'two', 'three', 'four', 'five',
-                   'six', 'seven', 'eight', 'nine', 'ten']
-    num_imgs = 5
+    img_classes = ['One', 'Two', 'Three', 'Four', 'Five',
+                   'Six', 'Seven', 'Eight', 'Nine', 'Ten']
+    num_imgs = 10
     IMAGE_PATH_MASTER = os.path.join(".", "dataset", "images")
 
     # Create Folder structures
