@@ -95,10 +95,9 @@ def split_images(img_classes, num_imgs, path_master, train, train_path, test_pat
         shutil.rmtree(os.path.join(path_master, img_class))
 
 
-def main():
+def main(args):
     # Define some constants
-    img_classes = ['One', 'Two', 'Three', 'Four', 'Five',
-                   'Six', 'Seven', 'Eight', 'Nine', 'Ten']
+    img_classes = ['ThumbUp', 'ThumbDown', 'ThankYou', 'LiveLong']
     num_imgs = 10
     IMAGE_PATH_MASTER = os.path.join(".", "dataset", "images")
 
@@ -109,15 +108,29 @@ def main():
         print("This OS is not Windows and not supported by this script!")
         return
 
-    # Capture images using webcam
-    # capture_images(img_classes, num_imgs, IMAGE_PATH_MASTER)
+    ### Capture images using webcam
+    if args.type == "capture":
+        capture_images(img_classes, num_imgs, IMAGE_PATH_MASTER)
 
-    # Splitting captured images into train and test set
-    split_images(img_classes, num_imgs, IMAGE_PATH_MASTER, train=0.8,
-                 train_path=os.path.join(IMAGE_PATH_MASTER, "train"),
-                 test_path=os.path.join(IMAGE_PATH_MASTER, "test"))
+    ### Splitting captured images into train and test set
+    else:
+        split_images(img_classes, num_imgs, IMAGE_PATH_MASTER, train=0.8,
+                     train_path=os.path.join(IMAGE_PATH_MASTER, "train"),
+                     test_path=os.path.join(IMAGE_PATH_MASTER, "test"))
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--type",
+        help="Do you want to capture new dataset or split existing dataset?",
+        default="capture",
+        choices=["capture", "split"],
+        type=str
+    )
+    args = parser.parse_args()
+
+    main(args)
     print("Finish!!!")

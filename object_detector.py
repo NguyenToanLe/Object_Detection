@@ -25,6 +25,7 @@ import subprocess
 
 import numpy as np
 import cv2
+import matplotlib.pyplot as plt
 
 import tensorflow as tf
 
@@ -101,8 +102,7 @@ def initialize_params():
         "training_script": os.path.join(".", "models", "research", "object_detection", "model_main_tf2.py")
     }
 
-    params_dict["IMAGE_CLASSES"] = ['One', 'Two', 'Three', 'Four', 'Five',
-                                    'Six', 'Seven', 'Eight', 'Nine', 'Ten']
+    params_dict["IMAGE_CLASSES"] = ['ThumbUp', 'ThumbDown', 'ThankYou', 'LiveLong']
 
     params_dict["HYPERPARAMS"] = {
         "batch_size": 4,
@@ -169,7 +169,71 @@ def train_loop(params):
         print(f"Failed to evaluate model with following error:\n{e}")
 
 
-def inference(params, ckpt_name):
+def latest_ckpt(path):
+    ckpt_max = "-1"
+    dir = os.listdir(path)
+
+    for fname in dir:
+        if os.path.isfile(os.path.join(path, fname)) and fname.startswith("ckpt"):
+            ckpt = fname.split(".")[0]              # ckpt-1.data-000000-of-00001 --> ckpt-1
+            ckpt_nr = int(ckpt.split("-")[-1])      # ckpt-1 --> 1
+            if int(ckpt_nr) > int(ckpt_max):
+                ckpt_max = ckpt_nr
+
+    return "ckpt-{}".format(ckpt_max)
+
+
+def inference_single_image(params, ckpt_name, image_path):
+    config = config_util.get_configs_from_pipeline_file(params["FILE"]["custom_config"])
+    detection_model = model_builder.build(model_config=config["model"], is_training=False)
+
+    ckpt = tf.compat.v2.train.Checkpoint(model=detection_model)
+    ckpt.restore(os.path.join(params["PATH"]["custom_model"], ckpt_name)).expect_partial()
+
+    @tf.function
+    def detect_fn(image):
+        image, shapes = detection_model.preprocess(image)
+        prediction_dict = detection_model.predict(image, shapes)
+        detections = detection_model.postprocess(prediction_dict, shapes)
+        return detections
+
+    category_index = label_map_util.create_category_index_from_labelmap(params["FILE"]["custom_label_map"])
+
+    img = cv2.imread(image_path)
+    image_np = np.array(img)
+
+    input_tensor = tf.convert_to_tensor(np.expand_dims(image_np, 0), dtype=tf.float32)
+    detections = detect_fn(input_tensor)
+
+    num_detections = int(detections.pop("num_detections"))
+    detections = {key: value[0, :num_detections].numpy() for key, value in detections.items()}
+    detections["num_detections"] = num_detections
+
+    # detection_classes should be ints
+    detections["detection_classes"] = detections["detection_classes"].astype(np.int64)
+
+    label_id_offset = 1
+    image_np_with_detections = image_np.copy()
+
+    viz_utils.visualize_boxes_and_labels_on_image_array(
+        image_np_with_detections,
+        detections["detection_boxes"],
+        detections["detection_classes"] + label_id_offset,
+        detections["detection_scores"],
+        category_index,
+        use_normalized_coordinates=True,
+        max_boxes_to_draw=5,
+        min_score_thresh=.8,
+        agnostic_mode=False
+    )
+
+    plt.figure()
+    plt.imshow(cv2.cvtColor(image_np_with_detections, cv2.COLOR_BGR2RGB))
+    plt.axis('off')
+    plt.savefig("output_figure.png", dpi=300, bbox_inches='tight')
+
+
+def inference_real_time_camera(params, ckpt_name):
     config = config_util.get_configs_from_pipeline_file(params["FILE"]["custom_config"])
     detection_model = model_builder.build(model_config=config["model"], is_training=False)
 
@@ -224,27 +288,59 @@ def inference(params, ckpt_name):
             break
 
 
-def main():
+def main(args):
     # Define some constants
     PARAMS = initialize_params()
 
-    # Build model
-    # create_label_maps(PARAMS["IMAGE_CLASSES"], PARAMS["FILE"]["custom_label_map"])
-    # create_tf_record(script=PARAMS["FILE"]["TF_record_generator"],
-    #                  image_train_path=os.path.join(PARAMS["PATH"]["images"], "train"),
-    #                  image_test_path=os.path.join(PARAMS["PATH"]["images"], "test"),
-    #                  label_map_path=PARAMS["FILE"]["custom_label_map"],
-    #                  tfrecord_train_path=PARAMS["FILE"]["custom_train_tf_record"],
-    #                  tfrecord_test_path=PARAMS["FILE"]["custom_test_tf_record"])
-    # create_custom_pipeline_config(PARAMS)
+    ### TRAIN MODE
+    if args.is_train:
+        # Build model
+        create_label_maps(PARAMS["IMAGE_CLASSES"], PARAMS["FILE"]["custom_label_map"])
+        create_tf_record(script=PARAMS["FILE"]["TF_record_generator"],
+                         image_train_path=os.path.join(PARAMS["PATH"]["images"], "train"),
+                         image_test_path=os.path.join(PARAMS["PATH"]["images"], "test"),
+                         label_map_path=PARAMS["FILE"]["custom_label_map"],
+                         tfrecord_train_path=PARAMS["FILE"]["custom_train_tf_record"],
+                         tfrecord_test_path=PARAMS["FILE"]["custom_test_tf_record"])
+        create_custom_pipeline_config(PARAMS)
 
-    # Train model
-    # train_loop(PARAMS)
+        # Train model
+        train_loop(PARAMS)
 
-    # Inference
-    inference(params=PARAMS, ckpt_name="ckpt-5")
+    ### INFERENCE MODE
+    else:
+        ckpt_name = latest_ckpt(PARAMS["PATH"]["custom_model"])
+        if args.inference_type == "single_image":       # Infer a single image
+            inference_single_image(params=PARAMS, ckpt_name=ckpt_name,
+                                   image_path=args.image_path)
+        else:       # Real-time object detection using webcam
+            inference_real_time_camera(params=PARAMS, ckpt_name=ckpt_name)
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--is_train",
+        help="Which phase to run [eg. train or inference]",
+        action="store_true",
+        default=False
+    )
+    parser.add_argument(
+        "--inference_type",
+        help="Which type of inference do you want to run? On single image or real time detection using webcam",
+        choices=["single_image", "webcam"],
+        default="webcam",
+        type=str
+    )
+    parser.add_argument(
+        "--image_path",
+        help="Path to the image to run inference on",
+        default=r".\dataset\images\test\ThumbUp_9.jpg",
+        type=str
+    )
+    args = parser.parse_args()
+
+    main(args)
     print("Finish!!")
