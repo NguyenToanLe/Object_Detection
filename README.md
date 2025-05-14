@@ -1,5 +1,3 @@
-from os import mkdir
-
 # Object Detection Project
 
 
