@@ -63,7 +63,7 @@ pyrcc5 -o .\labelImg\libs\resources.py resources.qrc
 ```
 
 ### Install requirements for Object Detection
-#### Step 1: Download, extrack and add protoc (bin) to Environment Variable
+#### Step 1: Download, extract and add protoc (bin) to Environment Variable
 Follow the instruction 
 [here](https://github.com/protocolbuffers/protobuf/releases/tag/v3.8.0)
 
@@ -77,7 +77,7 @@ NOTICE: Install in terminal, NOT in IDE
 ```python
 cd .\models\research
 protoc object_detection\protos\*.proto --python_out=.
-cp object_detection\packages\tf2\setup.py .
+copy object_detection\packages\tf2\setup.py .
 pip install .
 python setup.py build
 python setup.py install
