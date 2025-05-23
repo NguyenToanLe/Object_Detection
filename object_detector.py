@@ -45,7 +45,7 @@ def get_img_classes(img_path):
     return img_classes
 
 
-def initialize_params():
+def initialize_params(args):
     params_dict = {}
 
     params_dict["NAME"] = {
