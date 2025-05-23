@@ -40,6 +40,20 @@ def show_webcam():
     cv2.destroyAllWindows()
 
 
+def get_img_class_info(img_path):
+    img_classes = []
+    img_count = 0
+    for f in os.listdir(img_path):
+        class_path = os.path.join(img_path, f)
+        if os.path.isdir(class_path):
+            img_classes.append(f)
+
+            img_count += len([name for name in os.listdir(class_path) if os.path.isfile(os.path.join(class_path, name))])
+
+    return img_classes, img_count
+
+
+
 def capture_images(img_classes, num_imgs, path_master):
     # Test position
     print("Test position of webcam")
@@ -96,25 +110,29 @@ def split_images(img_classes, num_imgs, path_master, train, train_path, test_pat
 
 
 def main(args):
-    # Define some constants
-    img_classes = ['ThumbUp', 'ThumbDown', 'ThankYou', 'LiveLong']
-    num_imgs = 10
-    IMAGE_PATH_MASTER = os.path.join(".", "dataset", "images")
-
-    # Create Folder structures
-    if os.name == 'nt':
-        create_folders(img_classes)
-    else:
-        print("This OS is not Windows and not supported by this script!")
-        return
-
     ### Capture images using webcam
     if args.type == "capture":
+        # Define some constants
+        img_classes = args.img_classes
+        num_imgs = args.num_imgs
+        IMAGE_PATH_MASTER = args.img_path
+
+        # Create Folder structures
+        if os.name == 'nt':
+            create_folders(img_classes)
+        else:
+            print("This OS is not Windows and not supported by this script!")
+            return
+
         capture_images(img_classes, num_imgs, IMAGE_PATH_MASTER)
 
     ### Splitting captured images into train and test set
     else:
-        split_images(img_classes, num_imgs, IMAGE_PATH_MASTER, train=0.8,
+        IMAGE_PATH_MASTER = args.img_path
+
+        img_classes, num_imgs = get_img_class_info(IMAGE_PATH_MASTER)
+
+        split_images(img_classes, num_imgs, IMAGE_PATH_MASTER, train=args.train,
                      train_path=os.path.join(IMAGE_PATH_MASTER, "train"),
                      test_path=os.path.join(IMAGE_PATH_MASTER, "test"))
 
@@ -123,12 +141,38 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
+    ### Common args
     parser.add_argument(
         "--type",
         help="Do you want to capture new dataset or split existing dataset?",
         default="capture",
         choices=["capture", "split"],
         type=str
+    )
+    parser.add_argument(
+        "--img_path",
+        help="Where to save/get the images",
+        default=os.path.join(".", "dataset", "images")
+    )
+    ### Args for capturing task
+    parser.add_argument(
+        "--img_classes",
+        nargs='+',  # Accepts one or more arguments
+        help="Which image class do you want to capture?",
+        default=['ThumbUp', 'ThumbDown', 'ThankYou', 'LiveLong']
+    )
+    parser.add_argument(
+        "--num_imgs",
+        help="How many images per class do you want to capture?",
+        default=10,
+        type=int
+    )
+    ### Args for splitting task
+    parser.add_argument(
+        "--train",
+        help="How much / Which ratio of the training images do you want to split?",
+        default=0.8,
+        type=float
     )
     args = parser.parse_args()
 

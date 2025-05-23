@@ -122,18 +122,30 @@ cd ..
 
 The "collect_dataset.py" script does two tasks:
 
-- Capturing new dataset for four classes: ThumbUp, ThumbDown, ThankYou, LiveLong. Each class has 10 images.
+- Capturing new dataset for pre-defined image classes. By default, they are "ThumbUp, ThumbDown, ThankYou, LiveLong", 
+each class has 10 images.
 - Split dataset AND THEIR CORRESPONDING DETECTION BOXES into train and test set with ratio 80:20
 
-This script has one argument: 
+**NOTICE**: For splitting task, images and annotations have to be in the same directory and they have the same name (except
+their extensions)
 
-- **type**: It asks, whether you want to capture new dataset or split existing dataset. It has two values: "capture", 
-and "split". By default, it is set to "capture"
+This script has four arguments: 
+
+- `--type`: It asks, whether you want to capture new dataset or split existing dataset. It has two values: "capture", 
+and "split". By default, it is set to "capture".
+- `--img_path`: If it is capturing task, where to save these captured images. If it is splitting task, where do the
+images come from.
+- `--img_classes`: Which image classes do you want to capture. You just need to type in `--img_class [Class1] [Class2]`,
+seperating by a space. This argument is case-sensitive. By default, it is set to "ThumbUp, ThumbDown, ThankYou, LiveLong".
+- `--num_imgs`: How many images per class do you want to capture. By default, it is set to 10.
+- `--train`: Which ratio / How many of training images do you want to split. By default, it is set to 0.8.
+
+**NOTICE**: `--img_classes` and `--num_imgs` are used for capturing task. `--train' is used for splitting task.
 
 #### Capture new dataset
 ```python
 cd ..\..\..\
-python collect_dataset.py
+python collect_dataset.py --img_path=".\dataset\images" --img_classes ThumbUp ThumbDown ThankYou LiveLong --num_imgs=10
 ```
 
 Then, a webcam window will appear for you to test your position. If you are comfortable with your position, just type
@@ -168,7 +180,7 @@ Notice, you HAVE TO split the dataset AFTER annotation step, because the script 
 boxes, as well.
 
 ```python
-python collect_dataset.py --type="split"
+python collect_dataset.py --type="split" --img_path=".\dataset\images" --train=0.8
 ```
 
 ### TRAINING
@@ -180,14 +192,18 @@ The "object_detector.py" script does two tasks:
 
 This script has three arguments: 
 
-- **is_train**: Whether you want to use training or inference mode. By default, it is in inference mode.
-- **inference_type**: There are two type of inference, whether you want to infer a single image, or you want to use the
+- `--is_train`: Whether you want to use training or inference mode. By default, it is in inference mode.
+- `--batch_size`: Batch size to train model. By default, it is set to 4.
+- `--num_steps`: Number of steps to train model. By default, it is set to 2000
+- `--inference_type`: There are two type of inference, whether you want to infer a single image, or you want to use the
 real-time object detection function using the camera. There are two options: "single_image", and "webcam". By default, 
 it is "webcam".
-- **image_path**: If you want to infer a single image, give the path to this image.
+- `--image_path`: If you want to infer a single image, give the path to this image.
+
+NOTICE: `--batch_size` and `--num_steps` are used for training. `--inference_type` and `--image_path` are used for inference.
 
 ```python
-python object_detector.py --is_train
+python object_detector.py --is_train --batch_size=4 --num_steps=4000
 ```
 
 ### INFERENCE
@@ -196,7 +212,7 @@ As described in previous chapter (TRAINING), you can change the arguments to inf
 example using camera for real-time object detection.
 
 ```python
-python object_detector.py 
+python object_detector.py
 ```
 
 To quit the process, press "q" on keyboard.

@@ -35,6 +35,52 @@ from google.protobuf import text_format
 from object_detection.utils import visualization_utils as viz_utils
 
 
+def get_img_classes(img_path):
+    img_classes = []
+    for f in os.listdir(img_path):
+        class_path = os.path.join(img_path, f)
+        if os.path.isdir(class_path):
+            img_classes.append(f)
+
+    return img_classes
+
+
+def initialize_params():
+    params_dict = {}
+
+    params_dict["NAME"] = {
+        "pretrained_model": "ssd_mobilenet_v2_fpnlite_320x320_coco17_tpu-8"
+    }
+
+    params_dict["PATH"] = {
+        "pretrained_model": os.path.join(".", "pretrained_model", params_dict["NAME"]["pretrained_model"]),
+        "custom_model": os.path.join(".", "custom_model"),
+        "images": os.path.join(".", "dataset", "images"),
+        "annotation": os.path.join(".", "dataset", "annotation")
+    }
+
+    params_dict["FILE"] = {
+        "pretrained_config": os.path.join(params_dict["PATH"]["pretrained_model"], "pipeline.config"),
+        "custom_config": os.path.join(params_dict["PATH"]["custom_model"], "pipeline.config"),
+        "pretrained_checkpoint": os.path.join(params_dict["PATH"]["pretrained_model"], "checkpoint", "ckpt-0"),
+        "custom_label_map": os.path.join(params_dict["PATH"]["annotation"], "label_map.pbtxt"),
+        "custom_train_tf_record": os.path.join(params_dict["PATH"]["annotation"], "train.record"),
+        "custom_test_tf_record": os.path.join(params_dict["PATH"]["annotation"], "test.record"),
+        "TF_record_generator": os.path.join(".", "GenerateTFRecord", "generate_tfrecord.py"),
+        "training_script": os.path.join(".", "models", "research", "object_detection", "model_main_tf2.py")
+    }
+
+    params_dict["IMAGE_CLASSES"], _ = get_img_classes(params_dict["PATH"]["images"])
+
+    params_dict["HYPERPARAMS"] = {
+        "batch_size": args.batch_size,
+        "num_steps": args.num_steps,
+        "checkpoint_type": "detection"
+    }
+
+    return params_dict
+
+
 def create_label_maps(labels, label_map_file):
     # The .pbtxt label map file should have following structure
     # item {
@@ -75,42 +121,6 @@ def create_tf_record(script, image_train_path, image_test_path, label_map_path,
     except Exception as e:
         print(f"Failed to generate TF Record for train dataset with following error:\n{e}")
     print("Done!")
-
-
-def initialize_params():
-    params_dict = {}
-
-    params_dict["NAME"] = {
-        "pretrained_model": "ssd_mobilenet_v2_fpnlite_320x320_coco17_tpu-8"
-    }
-
-    params_dict["PATH"] = {
-        "pretrained_model": os.path.join(".", "pretrained_model", params_dict["NAME"]["pretrained_model"]),
-        "custom_model": os.path.join(".", "custom_model"),
-        "images": os.path.join(".", "dataset", "images"),
-        "annotation": os.path.join(".", "dataset", "annotation")
-    }
-
-    params_dict["FILE"] = {
-        "pretrained_config": os.path.join(params_dict["PATH"]["pretrained_model"], "pipeline.config"),
-        "custom_config": os.path.join(params_dict["PATH"]["custom_model"], "pipeline.config"),
-        "pretrained_checkpoint": os.path.join(params_dict["PATH"]["pretrained_model"], "checkpoint", "ckpt-0"),
-        "custom_label_map": os.path.join(params_dict["PATH"]["annotation"], "label_map.pbtxt"),
-        "custom_train_tf_record": os.path.join(params_dict["PATH"]["annotation"], "train.record"),
-        "custom_test_tf_record": os.path.join(params_dict["PATH"]["annotation"], "test.record"),
-        "TF_record_generator": os.path.join(".", "GenerateTFRecord", "generate_tfrecord.py"),
-        "training_script": os.path.join(".", "models", "research", "object_detection", "model_main_tf2.py")
-    }
-
-    params_dict["IMAGE_CLASSES"] = ['ThumbUp', 'ThumbDown', 'ThankYou', 'LiveLong']
-
-    params_dict["HYPERPARAMS"] = {
-        "batch_size": 4,
-        "num_steps": 4000,
-        "checkpoint_type": "detection"
-    }
-
-    return params_dict
 
 
 def create_custom_pipeline_config(params):
@@ -290,7 +300,7 @@ def inference_real_time_camera(params, ckpt_name):
 
 def main(args):
     # Define some constants
-    PARAMS = initialize_params()
+    PARAMS = initialize_params(args)
 
     ### TRAIN MODE
     if args.is_train:
@@ -339,6 +349,18 @@ if __name__ == "__main__":
         help="Path to the image to run inference on",
         default=r".\dataset\images\test\ThumbUp_9.jpg",
         type=str
+    )
+    parser.add_argument(
+        "--batch_size",
+        help="Batch size to train model",
+        default=4,
+        type=int
+    )
+    parser.add_argument(
+        "--num_steps",
+        help="Number of steps to train model",
+        default=2000,
+        type=int
     )
     args = parser.parse_args()
 
