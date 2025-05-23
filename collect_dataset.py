@@ -89,7 +89,7 @@ def split_images(img_classes, num_imgs, path_master, train, train_path, test_pat
 
     for img_class in img_classes:
         files = os.listdir(os.path.join(path_master, img_class))
-        train_files = files[:num_train_imgs*2]
+        train_files = files[:num_train_imgs]
         for file in train_files:
             shutil.move(os.path.join(path_master, img_class, file),
                         os.path.join(train_path, file))
